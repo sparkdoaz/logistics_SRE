@@ -13,6 +13,7 @@ import (
 
 func main() {
 	// 初始化 Gin 路由
+	gin.SetMode(gin.DebugMode)
 	r := gin.Default()
 
 	// 資料庫連接字符串
@@ -41,14 +42,13 @@ func queryLogisticsHandler(db *sql.DB) gin.HandlerFunc {
 			return
 		}
 
-		var id int
-		var description, status string
+		details, err := getPackageDetailsInDB(sno, db)
 
-		// 檢查是否存在符合 "sno" 的數據
-		err := db.QueryRow("SELECT sno, description, status FROM logistics WHERE sno = $1", sno).Scan(&sno, &description, &status)
 		if err != nil {
 			if err == sql.ErrNoRows {
-				c.JSON(http.StatusNotFound, gin.H{"error": "No data found for sno: " + sno})
+				c.JSON(http.StatusNotFound, 
+					gin.H{
+						"error": "No data found for sno: " + sno})
 			} else {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			}
@@ -56,9 +56,60 @@ func queryLogisticsHandler(db *sql.DB) gin.HandlerFunc {
 		}
 
 		c.JSON(http.StatusOK, gin.H{
-			"id":          id,
-			"description": description,
-			"status":      status,
+			"status": "success",
+			"data":   details,
+			"error":  err,
 		})
 	}
+}
+
+func getPackageDetailsInDB(sno string, db *sql.DB) (PackageDetails, error) {
+	var pd PackageDetails
+
+	// 查詢基本資訊s
+	query := `SELECT sno, tracking_status, estimated_delivery FROM Packages WHERE sno = $1`
+	row := db.QueryRow(query, sno)
+	if err := row.Scan(&pd.Sno, &pd.TrackingStatus, &pd.EstimatedDelivery); err != nil {
+		return pd, err
+	}
+
+	// 查詢追蹤細節sss
+	detailsQuery := `SELECT id, date, time, status, location_id FROM TrackingDetails WHERE sno = $1`
+	rows, err := db.Query(detailsQuery, sno)
+	if err != nil {
+		return pd, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var td TrackingDetail
+
+		if err := rows.Scan(&td.ID, &td.Date, &td.Time, &td.Status, &td.LocationID); err != nil {
+			return pd, err
+		}
+		pd.Details = append(pd.Details, td)
+	}
+
+	// 查詢收件人資訊
+	recipientQuery := `SELECT id, name, address, phone FROM Recipients WHERE sno = $1`
+	recipientRow := db.QueryRow(recipientQuery, sno)
+	if err := recipientRow.Scan(&pd.Recipient.ID,
+		&pd.Recipient.Name, &pd.Recipient.Address, &pd.Recipient.Phone); err != nil {
+		return pd, err
+	}
+
+	// 查詢當前位置資訊
+	locationQuery := `SELECT location_id, title, city, address FROM Locations WHERE location_id = 
+(SELECT location_id FROM TrackingDetails WHERE sno = $1 ORDER BY date DESC, time DESC LIMIT 1)`
+	locationRow := db.QueryRow(locationQuery, sno)
+	if err := locationRow.Scan(
+		&pd.CurrentLocation.LocationID,
+		&pd.CurrentLocation.Title,
+		&pd.CurrentLocation.City,
+		&pd.CurrentLocation.Address,
+	); err != nil {
+		return pd, err
+	}
+
+	return pd, nil
 }
