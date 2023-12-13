@@ -18,7 +18,7 @@ func main() {
 
 	// 資料庫連接字符串
 	// connStr := "postgres://pqgotest:password@localhost/pqgotest?sslmode=verify-full"
-	db, err := sql.Open("postgres", "user=cfh00895351 dbname=cfh00895351 sslmode=disable")
+	db, err := sql.Open("postgres", "user=postgres dbname=postgres password=admin host=localhost port=8080  sslmode=disable")
 	if err != nil {
 		panic(err)
 	}
@@ -28,7 +28,7 @@ func main() {
 	r.GET("/query", queryLogisticsHandler(db))
 
 	// 啟動 Web 伺服器
-	if err := r.Run(":8080"); err != nil {
+	if err := r.Run("127.0.0.1:3000"); err != nil {
 		panic(err)
 	}
 }
