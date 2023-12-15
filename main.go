@@ -99,8 +99,7 @@ func getPackageDetailsInDB(sno string, db *sql.DB) (PackageDetails, error) {
 	}
 
 	// 查詢當前位置資訊
-	locationQuery := `SELECT location_id, title, city, address FROM Locations WHERE location_id = 
-(SELECT location_id FROM TrackingDetails WHERE sno = $1 ORDER BY date DESC, time DESC LIMIT 1)`
+	locationQuery := `SELECT location_id, title, city, address FROM Locations WHERE location_id = (SELECT location_id FROM TrackingDetails WHERE sno = $1 ORDER BY date DESC, time DESC LIMIT 1)`
 	locationRow := db.QueryRow(locationQuery, sno)
 	if err := locationRow.Scan(
 		&pd.CurrentLocation.LocationID,
