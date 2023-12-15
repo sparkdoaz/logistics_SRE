@@ -38,7 +38,14 @@ func queryLogisticsHandler(db *sql.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		sno := c.DefaultQuery("sno", "")
 		if sno == "" {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "sno parameter is required"})
+			c.JSON(404, gin.H{
+				"status": "error",
+				"data":   nil,
+				"error": gin.H{
+					"code":    404,
+					"message": "Tracking number not found",
+				},
+			})
 			return
 		}
 
@@ -46,11 +53,23 @@ func queryLogisticsHandler(db *sql.DB) gin.HandlerFunc {
 
 		if err != nil {
 			if err == sql.ErrNoRows {
-				c.JSON(http.StatusNotFound,
-					gin.H{
-						"error": "No data found for sno: " + sno})
+				c.JSON(404, gin.H{
+					"status": "error",
+					"data":   nil,
+					"error": gin.H{
+						"code":    404,
+						"message": "Tracking number not found",
+					},
+				})
 			} else {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				c.JSON(404, gin.H{
+					"status": "error",
+					"data":   nil,
+					"error": gin.H{
+						"code":    404,
+						"message": "Tracking number not found",
+					},
+				})
 			}
 			return
 		}
