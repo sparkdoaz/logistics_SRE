@@ -18,7 +18,7 @@ func main() {
 
 	// 資料庫連接字符串
 	// connStr := "postgres://pqgotest:password@localhost/pqgotest?sslmode=verify-full"
-	db, err := sql.Open("postgres", "user=postgres dbname=postgres password=admin host=localhost port=8080  sslmode=disable")
+	db, err := sql.Open("postgres", "user=postgres dbname=postgres password=postgres host=localhost port=5432  sslmode=disable")
 	if err != nil {
 		panic(err)
 	}
@@ -46,7 +46,7 @@ func queryLogisticsHandler(db *sql.DB) gin.HandlerFunc {
 
 		if err != nil {
 			if err == sql.ErrNoRows {
-				c.JSON(http.StatusNotFound, 
+				c.JSON(http.StatusNotFound,
 					gin.H{
 						"error": "No data found for sno: " + sno})
 			} else {
