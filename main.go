@@ -8,6 +8,7 @@ import (
 	_ "fmt"
 	_ "log"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -18,13 +19,15 @@ import (
 var ctx = context.Background()
 
 func main() {
+	postgresHost := os.Getenv("POSTGRES_HOST")
+	redisHost := os.Getenv("REDIS_HOST")
 	// 初始化 Gin 路由
 	gin.SetMode(gin.DebugMode)
 	r := gin.Default()
 
 	// 資料庫連接字符串
 	// connStr := "postgres://pqgotest:password@localhost/pqgotest?sslmode=verify-full"
-	db, err := sql.Open("postgres", "user=postgres dbname=postgres password=postgres host=localhost port=5432  sslmode=disable")
+	db, err := sql.Open("postgres", "user=postgres dbname=postgres password=postgres host="+postgresHost+" port=5432  sslmode=disable")
 	if err != nil {
 		panic(err)
 	}
@@ -32,7 +35,7 @@ func main() {
 
 	// 创建 Redis 客户端连接
 	client := redis.NewClient(&redis.Options{
-		Addr:     "localhost:6379",
+		Addr:     redisHost + ":6379",
 		Password: "", // no password set
 		DB:       0,  // use default DB
 	})
@@ -48,7 +51,7 @@ func main() {
 	r.GET("/query", queryLogisticsHandler(db, client))
 
 	// 啟動 Web 伺服器
-	if err := r.Run("127.0.0.1:3000"); err != nil {
+	if err := r.Run(":3000"); err != nil {
 		panic(err)
 	}
 }
