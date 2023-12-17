@@ -20,6 +20,10 @@ var ctx = context.Background()
 
 func main() {
 	postgresHost := os.Getenv("POSTGRES_HOST")
+	if postgresHost == "" {
+		postgresHost = "database-1.cqh017bzo4xj.ap-northeast-1.rds.amazonaws.com"
+	}
+
 	redisHost := os.Getenv("REDIS_HOST")
 	// 初始化 Gin 路由
 	gin.SetMode(gin.DebugMode)
@@ -30,7 +34,10 @@ func main() {
 	db, err := sql.Open("postgres", "user=postgres dbname=postgres password=postgres host="+postgresHost+" port=5432  sslmode=disable")
 	if err != nil {
 		// panic(err)
+	} else {
+		fmt.Println("postgres connection is established")
 	}
+
 	defer db.Close()
 
 	// 创建 Redis 客户端连接
