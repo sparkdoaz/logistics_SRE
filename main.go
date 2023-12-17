@@ -133,53 +133,55 @@ func queryLogisticsHandler(db *sql.DB, redis *redis.Client) gin.HandlerFunc {
 func getPackageDetailsInDB(sno string, db *sql.DB) (PackageDetails, error) {
 	var pd PackageDetails
 
-	// 查詢基本資訊s
-	query := `SELECT sno, tracking_status, estimated_delivery FROM Packages WHERE sno = $1`
+	// 查询基本信息
+	query := `SELECT p.sno, p.tracking_status, p.estimated_delivery, l.title AS location_title
+			  FROM Packages p
+			  LEFT JOIN TrackingDetails td ON p.sno = td.sno
+			  LEFT JOIN Locations l ON td.location_id = l.location_id
+			  WHERE p.sno = $1
+			  ORDER BY td.date DESC, td.time DESC
+			  LIMIT 1`
+
 	row := db.QueryRow(query, sno)
-	if err := row.Scan(&pd.Sno, &pd.TrackingStatus, &pd.EstimatedDelivery); err != nil {
-		fmt.Println("	if err := row.Scan(&pd.Sno, &pd.TrackingStatus, &pd.EstimatedDelivery); err != nil {")
+	if err := row.Scan(&pd.Sno, &pd.TrackingStatus, &pd.EstimatedDelivery, &pd.CurrentLocation.Title); err != nil {
 		return pd, err
 	}
 
-	// 查詢追蹤細節
-	detailsQuery := `SELECT id, date, time, status, location_id FROM TrackingDetails WHERE sno = $1`
+	// 查询追踪细节
+	detailsQuery := `SELECT id, date, time, status, location_id
+					FROM TrackingDetails
+					WHERE sno = $1
+					ORDER BY date, time`
+
 	rows, err := db.Query(detailsQuery, sno)
 	if err != nil {
-		fmt.Println("// 查詢追蹤細節 error:", err)
 		return pd, err
 	}
 	defer rows.Close()
 
 	for rows.Next() {
 		var td TrackingDetail
-
 		if err := rows.Scan(&td.ID, &td.Date, &td.Time, &td.Status, &td.LocationID); err != nil {
-			fmt.Println("		if err := rows.Scan(&td.ID, &td.Date, &td.Time, &td.Status, &td.LocationID); err != nil {", err)
 			return pd, err
 		}
 		pd.Details = append(pd.Details, td)
 	}
 
-	// 查詢收件人資訊
-	recipientQuery := `SELECT id, name, address, phone FROM Recipients WHERE sno = $1`
+	// 查询收件人信息
+	recipientQuery := `SELECT id, name, address, phone
+					  FROM Recipients
+					  WHERE sno = $1`
+
 	recipientRow := db.QueryRow(recipientQuery, sno)
-	if err := recipientRow.Scan(&pd.Recipient.ID,
-		&pd.Recipient.Name, &pd.Recipient.Address, &pd.Recipient.Phone); err != nil {
-			fmt.Println("recipientQuery", err)
+	if err := recipientRow.Scan(&pd.Recipient.ID, &pd.Recipient.Name, &pd.Recipient.Address, &pd.Recipient.Phone); err != nil {
 		return pd, err
 	}
 
-	// 查詢當前位置資訊
-	locationQuery := `SELECT location_id, title, city, address FROM Locations WHERE location_id = (SELECT location_id FROM TrackingDetails WHERE sno = $1 ORDER BY date DESC, time DESC LIMIT 1)`
-	locationRow := db.QueryRow(locationQuery, sno)
-	if err := locationRow.Scan(
-		&pd.CurrentLocation.LocationID,
-		&pd.CurrentLocation.Title,
-		&pd.CurrentLocation.City,
-		&pd.CurrentLocation.Address,
-	); err != nil {
-		fmt.Println("這裡有 error")
-		return pd, err
+	// 如果查询结果为空，则设置字段为null值
+	if pd.Sno == "" {
+		pd.Details = nil
+		pd.Recipient = Recipient{}
+		pd.CurrentLocation = Location{}
 	}
 
 	return pd, nil
