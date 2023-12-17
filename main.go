@@ -30,7 +30,7 @@ func main() {
 
 	// 資料庫連接字符串
 	// connStr := "postgres://pqgotest:password@localhost/pqgotest?sslmode=verify-full"
-	db, err := sql.Open("postgres", "user=postgres dbname=postgres password=postgres host="+postgresHost+" port=5432  sslmode=disable")
+	db, err := sql.Open("postgres", "user=postgres dbname=postgres password=postgres host="+postgresHost+" port=5432  sslmode=require")
 	if err != nil {
 		panic(err)
 	} else {
