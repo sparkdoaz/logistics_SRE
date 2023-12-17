@@ -56,6 +56,8 @@ func main() {
 	str, err := client.Ping(ctx).Result()
 	if err != nil {
 		// panic(err)
+	} else {
+		fmt.Println("redis connection is established")
 	}
 	fmt.Print(str)
 
@@ -198,6 +200,7 @@ func get(client *redis.Client, db *sql.DB, sno string, ctx context.Context) (Pac
 		// 缓存命中，直接返回缓存的物流信息
 		var packageDetails PackageDetails
 		if err := json.Unmarshal([]byte(cacheResult), &packageDetails); err != nil {
+			fmt.Println("解析失敗")
 			return PackageDetails{}, err
 		}
 		return packageDetails, nil
