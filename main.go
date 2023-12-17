@@ -187,6 +187,7 @@ func get(client *redis.Client, db *sql.DB, sno string, ctx context.Context) (Pac
 		return packageDetails, nil
 	} else if err != nil {
 		// 出现错误
+		fmt.Println("Error:")
 		return PackageDetails{}, err
 	} else {
 		// 缓存命中，直接返回缓存的物流信息
