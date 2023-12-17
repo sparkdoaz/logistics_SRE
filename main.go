@@ -102,9 +102,7 @@ func queryLogisticsHandler(db *sql.DB, redis *redis.Client) gin.HandlerFunc {
 			return
 		}
 
-		// details, err := get(redis, db, sno, ctx)
-
-		details, err := getPackageDetailsInDB(sno, db)
+		details, err := get(redis, db, sno, ctx)
 
 		if err != nil {
 			if err == sql.ErrNoRows {
