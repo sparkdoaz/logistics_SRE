@@ -135,13 +135,15 @@ func getPackageDetailsInDB(sno string, db *sql.DB) (PackageDetails, error) {
 	query := `SELECT sno, tracking_status, estimated_delivery FROM Packages WHERE sno = $1`
 	row := db.QueryRow(query, sno)
 	if err := row.Scan(&pd.Sno, &pd.TrackingStatus, &pd.EstimatedDelivery); err != nil {
+		fmt.Println("	if err := row.Scan(&pd.Sno, &pd.TrackingStatus, &pd.EstimatedDelivery); err != nil {")
 		return pd, err
 	}
 
-	// 查詢追蹤細節sss
+	// 查詢追蹤細節
 	detailsQuery := `SELECT id, date, time, status, location_id FROM TrackingDetails WHERE sno = $1`
 	rows, err := db.Query(detailsQuery, sno)
 	if err != nil {
+		fmt.Println("// 查詢追蹤細節 error:", err)
 		return pd, err
 	}
 	defer rows.Close()
@@ -150,6 +152,7 @@ func getPackageDetailsInDB(sno string, db *sql.DB) (PackageDetails, error) {
 		var td TrackingDetail
 
 		if err := rows.Scan(&td.ID, &td.Date, &td.Time, &td.Status, &td.LocationID); err != nil {
+			fmt.Println("		if err := rows.Scan(&td.ID, &td.Date, &td.Time, &td.Status, &td.LocationID); err != nil {", err)
 			return pd, err
 		}
 		pd.Details = append(pd.Details, td)
@@ -160,6 +163,7 @@ func getPackageDetailsInDB(sno string, db *sql.DB) (PackageDetails, error) {
 	recipientRow := db.QueryRow(recipientQuery, sno)
 	if err := recipientRow.Scan(&pd.Recipient.ID,
 		&pd.Recipient.Name, &pd.Recipient.Address, &pd.Recipient.Phone); err != nil {
+			fmt.Println("recipientQuery", err)
 		return pd, err
 	}
 
@@ -172,6 +176,7 @@ func getPackageDetailsInDB(sno string, db *sql.DB) (PackageDetails, error) {
 		&pd.CurrentLocation.City,
 		&pd.CurrentLocation.Address,
 	); err != nil {
+		fmt.Println("這裡有 error")
 		return pd, err
 	}
 
@@ -183,6 +188,7 @@ func get(client *redis.Client, db *sql.DB, sno string, ctx context.Context) (Pac
 
 	if err == redis.Nil {
 		// 缓存不存在，从数据库获取物流信息
+		fmt.Println("cache 沒有資料, 去DB拿")
 		packageDetails, _ := getPackageDetailsInDB(sno, db)
 
 		// 将物流信息存入缓存
@@ -212,9 +218,10 @@ func setLogisticsInfoInCache(client *redis.Client, ctx context.Context, sno stri
 	// 将物流信息转换为 JSON 格式
 	data, err := json.Marshal(packageDetails)
 	if err != nil {
+		fmt.Println("set cache failed:", err)
 		return err
 	}
 	// 设置缓存并指定过期时间（根据业务需求设置）
 	client.HSet(ctx, "logistics_cache", sno, data).Err()
-	return client.Expire(ctx, "logistics_cache", time.Hour).Err()
+	return client.Expire(ctx, "logistics_cache", time.Hour * 2 / 60).Err()
 }
