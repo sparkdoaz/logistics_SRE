@@ -25,6 +25,11 @@ func main() {
 	}
 
 	redisHost := os.Getenv("REDIS_HOST")
+
+	if redisHost == "" {
+		redisHost = "10.0.201.44"
+	}
+
 	// 初始化 Gin 路由
 	gin.SetMode(gin.DebugMode)
 	r := gin.Default()
