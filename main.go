@@ -179,9 +179,7 @@ func getPackageDetailsInDB(sno string, db *sql.DB) (PackageDetails, error) {
 
 	// 如果查询结果为空，则设置字段为null值
 	if pd.Sno == "" {
-		pd.Details = nil
-		pd.Recipient = Recipient{}
-		pd.CurrentLocation = Location{}
+		return PackageDetails{}, nil
 	}
 
 	return pd, nil
