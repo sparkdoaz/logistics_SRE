@@ -29,7 +29,7 @@ func main() {
 	// connStr := "postgres://pqgotest:password@localhost/pqgotest?sslmode=verify-full"
 	db, err := sql.Open("postgres", "user=postgres dbname=postgres password=postgres host="+postgresHost+" port=5432  sslmode=disable")
 	if err != nil {
-		panic(err)
+		// panic(err)
 	}
 	defer db.Close()
 
@@ -43,16 +43,25 @@ func main() {
 	// 建立连接
 	str, err := client.Ping(ctx).Result()
 	if err != nil {
-		panic(err)
+		// panic(err)
 	}
 	fmt.Print(str)
 
 	// 設定查詢物流數據的端點
 	r.GET("/query", queryLogisticsHandler(db, client))
 
+	r.GET("/hi", hi())
 	// 啟動 Web 伺服器
 	if err := r.Run(":3000"); err != nil {
 		panic(err)
+	}
+}
+
+func hi() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{
+			"status": "success",
+		})
 	}
 }
 
