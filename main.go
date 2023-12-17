@@ -5,8 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	_ "fmt"
-	_ "log"
+	"log"
 	"net/http"
 	"os"
 	"time"
@@ -25,25 +24,29 @@ func main() {
 	}
 
 	redisHost := os.Getenv("REDIS_HOST")
-
 	if redisHost == "" {
 		redisHost = "10.0.201.44"
 	}
-
-	// 初始化 Gin 路由
-	gin.SetMode(gin.DebugMode)
-	r := gin.Default()
 
 	// 資料庫連接字符串
 	// connStr := "postgres://pqgotest:password@localhost/pqgotest?sslmode=verify-full"
 	db, err := sql.Open("postgres", "user=postgres dbname=postgres password=postgres host="+postgresHost+" port=5432  sslmode=disable")
 	if err != nil {
-		// panic(err)
+		panic(err)
 	} else {
 		fmt.Println("postgres connection is established")
 	}
-
 	defer db.Close()
+	// 創建一個變數來存儲查詢結果
+	var rowCount int
+
+	// 執行查詢並將結果存儲到rowCount變數中
+	err = db.QueryRow("SELECT COUNT(*) FROM Packages").Scan(&rowCount)
+	if err != nil {
+			log.Fatal(err)
+	}
+	// 打印查詢結果
+	fmt.Printf("Total rows in Packages table: %d\n", rowCount)
 
 	// 创建 Redis 客户端连接
 	client := redis.NewClient(&redis.Options{
@@ -55,11 +58,15 @@ func main() {
 	// 建立连接
 	str, err := client.Ping(ctx).Result()
 	if err != nil {
-		// panic(err)
+		panic(err)
 	} else {
 		fmt.Println("redis connection is established")
 	}
 	fmt.Print(str)
+
+	// 初始化 Gin 路由
+	gin.SetMode(gin.DebugMode)
+	r := gin.Default()
 
 	// 設定查詢物流數據的端點
 	r.GET("/query", queryLogisticsHandler(db, client))
