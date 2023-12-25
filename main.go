@@ -20,17 +20,17 @@ var ctx = context.Background()
 func main() {
 	postgresHost := os.Getenv("POSTGRES_HOST")
 	if postgresHost == "" {
-		postgresHost = "database-1.cqh017bzo4xj.ap-northeast-1.rds.amazonaws.com"
+		postgresHost = "10.0.201.250"
 	}
 
 	redisHost := os.Getenv("REDIS_HOST")
 	if redisHost == "" {
-		redisHost = "10.0.201.44"
+		redisHost = "10.0.201.250"
 	}
 
 	// 資料庫連接字符串
 	// connStr := "postgres://pqgotest:password@localhost/pqgotest?sslmode=verify-full"
-	db, err := sql.Open("postgres", "user=postgres dbname=postgres password=postgres host="+postgresHost+" port=5432  sslmode=require")
+	db, err := sql.Open("postgres", "user=postgres dbname=postgres password=postgres host="+postgresHost+" port=5432  sslmode=disable")
 	if err != nil {
 		panic(err)
 	} else {
